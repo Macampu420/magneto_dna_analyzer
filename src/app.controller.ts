@@ -11,6 +11,11 @@ export class AppController {
     private prisma: PrismaService,
   ) {}
 
+  @Get()
+  root(): string {
+    return 'API is running';
+  }
+
   @Get('hello')
   getHello(): string {
     return 'Hello World!';
