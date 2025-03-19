@@ -1,8 +1,16 @@
-import { Body, Controller, Get, Post, Res } from '@nestjs/common';
-import { CreateDnaDto } from './dna/dto/create-dna.dto';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Res,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { DnaService } from './dna/dna.service';
 import { PrismaService } from './prisma.service';
+import { DnaDto } from './dna/dna.dto';
 
 @Controller()
 export class AppController {
@@ -16,25 +24,29 @@ export class AppController {
     return 'API is running';
   }
 
-  @Get('hello')
-  getHello(): string {
-    return 'Hello World!';
-  }
-
   @Post('/mutant')
-  async isMutant(@Body() createDnaDto: CreateDnaDto, @Res() res: Response) {
-    const isMutant = this.dnaService.isMutant(createDnaDto.dna);
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  async isMutant(@Body() body: DnaDto, @Res() res: Response) {
+    const isSquare = body.dna.every((row) => row.length === body.dna.length);
+
+    if (!isSquare) {
+      return res.status(400).json({
+        message: 'DNA must be a square matrix',
+      });
+    }
+
+    const isMutant = this.dnaService.isMutant(body.dna);
 
     const dnaFromDb = await this.prisma.dna.findUnique({
       where: {
-        dna: createDnaDto.dna.join(''),
+        dna: body.dna.join(''),
       },
     });
 
     if (!dnaFromDb) {
       await this.prisma.dna.create({
         data: {
-          dna: createDnaDto.dna.join(''),
+          dna: body.dna.join(''),
           isMutant,
         },
       });
