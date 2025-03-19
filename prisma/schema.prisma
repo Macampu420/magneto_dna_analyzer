@@ -11,4 +11,6 @@ model Dna {
   id        String  @id @default(cuid())
   dna       String @unique
   isMutant  Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
